@@ -50,6 +50,7 @@ public class MockGoogleCloudStorageImplFactory {
                         .setDefaultUserAgent("gcs-io-unit-test")
                         .build()),
                 false));
-    return new GoogleCloudStorageImpl(options, storage, null);
+    return new GoogleCloudStorageImpl(
+        options, storage, null, GoogleCloudStorageImpl.tryGetCredentialsFromStorage(storage));
   }
 }

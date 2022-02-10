@@ -63,7 +63,9 @@ public class GoogleCloudStorageImplCreateTest {
                 .setGrpcEnabled(true)
                 .setTrafficDirectorEnabled(false)
                 .build(),
-            createStorage());
+            createStorage(),
+            /* downscopedAccessTokenFn= */ null,
+            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.DirectPathGrpcDecorator.class);
   }
@@ -78,7 +80,9 @@ public class GoogleCloudStorageImplCreateTest {
                 .setDirectPathPreferred(false)
                 .setTrafficDirectorEnabled(false)
                 .build(),
-            createStorage());
+            createStorage(),
+            /* downscopedAccessTokenFn= */ null,
+            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.CloudPathGrpcDecorator.class);
   }
@@ -88,7 +92,9 @@ public class GoogleCloudStorageImplCreateTest {
     GoogleCloudStorageImpl gcs =
         new GoogleCloudStorageImpl(
             GoogleCloudStorageOptions.builder().setAppName("app").setGrpcEnabled(true).build(),
-            createStorage());
+            createStorage(),
+            /* downscopedAccessTokenFn= */ null,
+            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.TrafficDirectorGrpcDecorator.class);
   }
