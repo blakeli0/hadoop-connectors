@@ -14,7 +14,7 @@
 
 package com.google.cloud.hadoop.gcsio;
 
-import static com.google.cloud.hadoop.gcsio.testing.MockGoogleCloudStorageImplFactory.mockedGcs;
+import static com.google.cloud.hadoop.gcsio.MockGoogleCloudStorageImplFactory.mockedGcs;
 import static com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.arbitraryInputStreamSupplier;
 import static com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.inputStreamResponse;
 import static com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.jsonErrorResponse;
@@ -25,14 +25,8 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
-import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.testing.http.MockHttpTransport;
-import com.google.api.services.storage.Storage;
-import com.google.auth.Credentials;
 import com.google.auth.oauth2.ComputeEngineCredentials;
-import com.google.cloud.hadoop.util.HttpTransportFactory;
-import com.google.cloud.hadoop.util.RetryHttpInitializer;
-import com.google.cloud.hadoop.util.RetryHttpInitializerOptions;
 import com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.ErrorResponses;
 import com.google.cloud.hadoop.util.testing.ThrowingInputStream;
 import java.io.IOException;
@@ -63,9 +57,7 @@ public class GoogleCloudStorageImplCreateTest {
                 .setGrpcEnabled(true)
                 .setTrafficDirectorEnabled(false)
                 .build(),
-            createStorage(),
-            /* downscopedAccessTokenFn= */ null,
-            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
+            ComputeEngineCredentials.create());
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.DirectPathGrpcDecorator.class);
   }
@@ -80,9 +72,7 @@ public class GoogleCloudStorageImplCreateTest {
                 .setDirectPathPreferred(false)
                 .setTrafficDirectorEnabled(false)
                 .build(),
-            createStorage(),
-            /* downscopedAccessTokenFn= */ null,
-            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
+            ComputeEngineCredentials.create());
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.CloudPathGrpcDecorator.class);
   }
@@ -92,9 +82,7 @@ public class GoogleCloudStorageImplCreateTest {
     GoogleCloudStorageImpl gcs =
         new GoogleCloudStorageImpl(
             GoogleCloudStorageOptions.builder().setAppName("app").setGrpcEnabled(true).build(),
-            createStorage(),
-            /* downscopedAccessTokenFn= */ null,
-            GoogleCloudStorageImpl.tryGetCredentialsFromStorage(createStorage()));
+            ComputeEngineCredentials.create());
     assertThat(gcs.getStorageStubProvider().getGrpcDecorator())
         .isInstanceOf(StorageStubProvider.TrafficDirectorGrpcDecorator.class);
   }
@@ -148,8 +136,8 @@ public class GoogleCloudStorageImplCreateTest {
   }
 
   /**
-   * Test handling when the parent thread waiting for the write to finish via the close call is
-   * interrupted, that the actual write is cancelled and interrupted as well.
+   * Test handling when the parent thread waiting for the write operation to finish via the close
+   * call is interrupted, that the actual write is cancelled and interrupted as well.
    */
   @Test
   public void testCreateObjectApiInterruptedException() throws Exception {
@@ -199,21 +187,5 @@ public class GoogleCloudStorageImplCreateTest {
     assertWithMessage("Failed to wait for tasks to get interrupted.")
         .that(threadsDoneLatch.await(5000, TimeUnit.MILLISECONDS))
         .isTrue();
-  }
-
-  private static Storage createStorage() throws IOException {
-    return createStorage(ComputeEngineCredentials.create());
-  }
-
-  private static Storage createStorage(Credentials credentials) throws IOException {
-    return new Storage.Builder(
-            HttpTransportFactory.createHttpTransport(),
-            GsonFactory.getDefaultInstance(),
-            new RetryHttpInitializer(
-                credentials,
-                RetryHttpInitializerOptions.builder()
-                    .setDefaultUserAgent("foo-user-agent")
-                    .build()))
-        .build();
   }
 }
